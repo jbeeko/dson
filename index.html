@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Dson by jbeeko</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Dson</h1>
+        <p>Domain Specific Object Notation</p>
+
+        <p class="view"><a href="https://github.com/jbeeko/dson">View the Project on GitHub <small>jbeeko/dson</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/jbeeko/dson/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/jbeeko/dson/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/jbeeko/dson">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="dson" class="anchor" href="#dson" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>dson</h1>
+
+<p>Domain Specific Object Notation</p>
+
+<p>TL;DR Create a model using Algebraic Data Types (ADTs) then use the model to create a compiler for that domain. The compiler can then be plugged into tools like Atom or VisualStudio Code it enforce the domain constraints and edit time. The end result is a kind of "typed YAML".</p>
+
+<p>With these tools it should be possible to create systems that automate the REST CRUD interactions for domain models. In some ways this is a "Back to the Future" idea a return of COBOL copybooks, record editors and 3270 terminals.  Or perhaps as a kind of "typed YAML" and there are efforts out there to do that. But this proposal is different because it is not adding another "schema language" but rather building the schema from the implementation language.</p>
+
+<hr>
+
+<h1>
+<a id="domain-modeling" class="anchor" href="#domain-modeling" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Domain Modeling</h1>
+
+<p>We start with the idea of using a typed functional language, or more specifically a language with Algebraic Data Types (ADT) to model a domain for example as described by Scott Wlaschin in <a href="http://fsharpforfunandprofit.com/posts/designing-with-types-intro/">this series</a>.</p>
+
+<p>Here is a simple model of a contact based on Scott's series. You can see a contact consists of a name a mandatory primary contact method and any number of secondary contact methods. The contact methods may be mailing addresses, emails or phone numbers.</p>
+
+<pre><code>module Contact =
+  type PersonalName =
+      {
+      FirstName: string;
+      MiddleInitial: string option;
+      LastName: string;
+      }
+
+  type PhoneNumber = PhoneNumber of string
+
+  type EmailAddress = EmailAddress of string
+
+  type ZipCode = ZipCode of string
+  type StateCode = StateCode of string
+  type PostalAddress =
+      {
+      Address1: string;
+      Address2: string;
+      City: string;
+      State: StateCode;
+      Zip: ZipCode;
+      }
+
+  type ContactMethod =
+      | Email of EmailAddress
+      | PostalAddress of PostalAddress
+      | HomePhone of PhoneContactInfo
+      | WorkPhone of PhoneContactInfo
+
+  type Contact =
+      {
+      Name: PersonalName;
+      PrimaryContactMethod: ContactMethod;
+      SecondaryContactMethods: ContactMethod list;
+      }
+</code></pre>
+
+<p>While not the complete story, this is valid f# code. Note how the type systems works with you to make it impossible to create an invalid contact. This is the notion of making "illegal states unrepresentable" coined by <a href="https://blogs.janestreet.com/effective-ml-revisited/">Yaron Minsky</a>. PersonName must have a first name and a last name, Middle initial is optional.</p>
+
+<p>Scott shows how to take this further in f# with types such as <code>string50</code> a string with maximum length of 50 characters etc. Or <code>initial</code> an alphabetic string of length 1. In the case of f# these additional constrains are implement via constructors. Other typed functional languages may do this differently, for example by using dependent types in Haskel.</p>
+
+<p>The Contact module could now be used to processing data collected by any front end technology. It will ensure only valid data is stored in the data base. Typically to ensure a reasonable user experience parallel validation rules are implemented on the front end.</p>
+
+<h1>
+<a id="domain-model-as-a-language" class="anchor" href="#domain-model-as-a-language" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Domain Model as a Language</h1>
+
+<p>The domain model defined above can be used to specify a domain language or a Domain Specific Object Notation. A direct translation would be something like the following:</p>
+
+<pre><code>Contact:
+    Name:
+      FirstName: John
+      LastName: Smith
+    PrimaryContactMethod
+      HomePhone: +1 604 999 1234
+    SecondaryContactMethods
+      WorkPhone: +1 604 345 4353
+      Email: john@acmewidgets.com
+</code></pre>
+
+<p>A better version of the language might be something like this:</p>
+
+<pre><code>Contact:
+    FirstName: John LastName: Smith
+    HomePhone: +1 604 999 1234
+    SecondaryContactMethods
+      WorkPhone: +1 604 345 4353
+      Email: john@acmewidgets.com
+</code></pre>
+
+<p>After all we know contacts can only have 3 children.</p>
+
+<ul>
+<li>a PersonName in the Name field</li>
+<li>a ContactMethod in the PrimaryContactMethod field</li>
+<li>a list of contact methods in the SecondaryContactMethods field</li>
+</ul>
+
+<h1>
+<a id="editing-the-domain-language" class="anchor" href="#editing-the-domain-language" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Editing the Domain Language</h1>
+
+<p>Programmers get the best tools. Don't believer it? Consider how many content management tools are as functional as Git (everything versioned, branching, merging of branches, blame, distributed editing)? But back to the domain model. As a Web Application this would almost certainly be implemented as a set of forms with buttons to add items. Some validation may be at the field level and some on submit. If you are lucky error messages are good and all work is saved between submissions of invalid forms.</p>
+
+<p>Compare that to todays best code editing experience with:</p>
+
+<ul>
+<li>Intellisense</li>
+<li>Great search</li>
+<li>Tool tips</li>
+<li>Code folding</li>
+<li>etc.</li>
+</ul>
+
+<p>Now imagine creating not just a simple contact as above, but perhaps a contract defining</p>
+
+<ul>
+<li>the parties</li>
+<li>terms</li>
+<li>services</li>
+<li>etc.</li>
+</ul>
+
+<p>What if the contract could be created by editing text guided using the latest in code editing techniques. I suggest that directed text editing may be:</p>
+
+<ul>
+<li>faster than using a web application</li>
+<li>provide a better overview of the model under construction</li>
+<li>provides a lot of flexibility in terms of tools</li>
+<li>since it results in text provides great flexibility in terms of how it is subsequently transmitted, stored, and processed</li>
+<li>makes it easy to create an off-line editing experience</li>
+<li>amenable to automation, from a domain model it should be possible to automate the construction of the appropriate compiler to be plugged into a code editor</li>
+</ul>
+
+<p>Hopefully the result will be a compiler directed domain language editing experience.</p>
+
+<h1>
+<a id="initial-plan-implementation-sketch" class="anchor" href="#initial-plan-implementation-sketch" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Initial Plan (implementation sketch)</h1>
+
+<ol>
+<li>Use FParsec to hand build a parser for the contact model above. This is to get familiar with parser combinators and FParsec specifically.</li>
+<li>Plug the resulting parser into VisualStudio Code</li>
+<li>Re-evaluate to determine if all this is a good idea.</li>
+<li>Investigate how to build the parser from the f# code using the meta-information in the parse tree or perhaps the compiled f# assemblies themselves.</li>
+</ol>
+
+<h1>
+<a id="where-could-this-be-useful" class="anchor" href="#where-could-this-be-useful" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Where could this be useful</h1>
+
+<p>This technique will not replace well designed web applications for broad audiences. But that leaves a lot of opportunity. Two big ones are:</p>
+
+<p><strong>Configuration Files</strong> - these typically have strict syntax and semantics but are often not validated at edit time. Most developers are probably familiar with editing an Apache conf. file and getting an error on startup.</p>
+
+<p><strong>Application Control Information</strong> - many application are a bit like ice bergs, the UI for the primary group of users is quite small, but there is a large UI needed to maintain various bits of control and configuration data. This hidden UI is ofter quite large and poorly implemented and a drain on resources that could be better utilized.</p>
+
+<p><strong>Applications for Power Users</strong> - It is not true that domain experts can't use sophisticated or terse tools. Well designed text based tools for use but domain experts are sometimes preferred. Especially if that means more function faster and fewer bugs.</p>
+
+<h1>
+<a id="been-there-done-that" class="anchor" href="#been-there-done-that" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Been there done that?</h1>
+
+<p>If all this has a "Back to the Future" feel to it you may be right. Consider for a moment COBOL copybooks and 3270 terminals. Working together these allowed programmers to define record types including nested types and variant records. But critically there was also support for building record editors with not much more than just the type definitions. It looks primitive to our eye but it is very functional and quick to build. Hopefully we can do better today.</p>
+
+<p>The proposal is also similar to various "form definition" languages available today. For example PDF forms. But those then to have ad-hoc languages and the output is not a semantically correct text document.</p>
+
+<p>Finally you could think of this idea as a kind of "typed YAML" and there are efforts out there to do that. This proposal is different because it is not adding another "schema language" but rather building the schema from the implementation language.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/jbeeko">jbeeko</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
