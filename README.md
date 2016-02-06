@@ -3,13 +3,13 @@ Domain Specific Object Notation
 
 TL;DR Create a model using Algebraic Data Types (ADTs) then use the model to create a compiler for that domain. The compiler can then be plugged into tools like Atom or VisualStudio Code it enforce the domain constraints and edit time. The end result is a kind of "typed YAML".
 
-With these tools it should be possible to create systems that automate the REST CRUD interactions for domain models. In some ways this is a "Back to the Future" idea a return of COBOL copybooks, record editors and 3270 terminals.  
+With these tools it should be possible to create systems that automate the REST CRUD interactions for domain models. In some ways this is a "Back to the Future" idea a return of COBOL copybooks, record editors and 3270 terminals.  Or perhaps as a kind of "typed YAML" and there are efforts out there to do that. But this proposal is different because it is not adding another "schema language" but rather building the schema from the implementation language.
 
 ---
 
 # Domain Modeling
 
-We start with the idea of useing a typed functional language, or more specifically a language with Algabraic Data Types (ADT) to model a domain for example as described by Scott Wlaschin in [this series](http://fsharpforfunandprofit.com/posts/designing-with-types-intro/).
+We start with the idea of using a typed functional language, or more specifically a language with Algebraic Data Types (ADT) to model a domain for example as described by Scott Wlaschin in [this series](http://fsharpforfunandprofit.com/posts/designing-with-types-intro/).
 
 Here is a simple model of a contact based on Scott's series. You can see a contact consists of a name a mandatory primary contact method and any number of secondary contact methods. The contact methods may be mailing addresses, emails or phone numbers.
 
@@ -108,18 +108,33 @@ What if the contract could be created by editing text guided using the latest in
 * faster than using a web application
 * provide a better overview of the model under construction
 * provides a lot of flexibility in terms of tools
-* since it results in text provides great flexibility in terms of how it is subsequently transmitted, stored, and processed.
+* since it results in text provides great flexibility in terms of how it is subsequently transmitted, stored, and processed
 * makes it easy to create an off-line editing experience
+* amenable to automation, from a domain model it should be possible to automate the construction of the appropriate compiler to be plugged into a code editor
 
-And... I hope that given a domain model all this can be automated.
+Hopefully the result will be a compiler directed domain language editing experience.
 
-# Sketch of an implementation
+# Initial Plan (implementation sketch)
 
-TBD
+1. Use FParsec to hand build a parser for the contact model above. This is to get familiar with parser combinators and FParsec specifically.
+2. Plug the resulting parser into VisualStudio Code
+3. Re-evaluate to determine if all this is a good idea.
+4. Investigate how to build the parser from the f# code using the meta-information in the parse tree or perhaps the compiled f# assemblies themselves.
 
+# Where could this be useful
+
+This technique will not replace well designed web applications for broad audiences. But that leaves a lot of opportunity. Two big ones are:
+
+**Configuration Files** - these typically have strict syntax and semantics but are often not validated at edit time. Most developers are probably familiar with editing an Apache conf. file and getting an error on startup.
+
+**Application Control Information** - many application are a bit like ice bergs, the UI for the primary group of users is quite small, but there is a large UI needed to maintain various bits of control and configuration data. This hidden UI is ofter quite large and poorly implemented and a drain on resources that could be better utilized.
+
+**Applications for Power Users** - It is not true that domain experts can't use sophisticated or terse tools. Well designed text based tools for use but domain experts are sometimes preferred. Especially if that means more function faster and fewer bugs.
 
 #Been there done that?
 
 If all this has a "Back to the Future" feel to it you may be right. Consider for a moment COBOL copybooks and 3270 terminals. Working together these allowed programmers to define record types including nested types and variant records. But critically there was also support for building record editors with not much more than just the type definitions. It looks primitive to our eye but it is very functional and quick to build. Hopefully we can do better today.
 
 The proposal is also similar to various "form definition" languages available today. For example PDF forms. But those then to have ad-hoc languages and the output is not a semantically correct text document.
+
+Finally you could think of this idea as a kind of "typed YAML" and there are efforts out there to do that. This proposal is different because it is not adding another "schema language" but rather building the schema from the implementation language.
