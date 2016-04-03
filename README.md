@@ -138,3 +138,4 @@ If all this has a "Back to the Future" feel to it you may be right. Consider for
 The proposal is also similar to various "form definition" languages available today. For example PDF forms. But those then to have ad-hoc languages and the output is not a semantically correct text document.
 
 Finally you could think of this idea as a kind of "typed YAML" and there are efforts out there to do that. This proposal is different because it is not adding another "schema language" but rather building the schema from the implementation language.
+-
